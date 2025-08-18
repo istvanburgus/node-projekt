@@ -13,6 +13,7 @@ function Content(props) {
 }
 
 function Total(props) {
+  // külön változó az összegnek
   const sum = props.parts[0].exercises + props.parts[1].exercises + props.parts[2].exercises
   return <p>Number of exercises {sum}</p>
 }
@@ -20,7 +21,6 @@ function Total(props) {
 function App() {
   const course = 'Half Stack application development'
 
-  // 1.4: tömb objektumokkal
   const parts = [
     { name: 'Fundamentals of React', exercises: 10 },
     { name: 'Using props to pass data', exercises: 7 },
