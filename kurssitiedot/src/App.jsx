@@ -3,11 +3,16 @@ function Header({ course }) {
 }
 
 function Content({ parts }) {
+  const [p1, p2, p3] = parts
+  const { name: n1, exercises: e1 } = p1
+  const { name: n2, exercises: e2 } = p2
+  const { name: n3, exercises: e3 } = p3
+
   return (
     <div>
-      <p>{parts[0].name} {parts[0].exercises}</p>
-      <p>{parts[1].name} {parts[1].exercises}</p>
-      <p>{parts[2].name} {parts[2].exercises}</p>
+      <p>{n1} {e1}</p>
+      <p>{n2} {e2}</p>
+      <p>{n3} {e3}</p>
     </div>
   )
 }
