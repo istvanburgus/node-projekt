@@ -1,7 +1,12 @@
 import { useState } from 'react'
 
 function StatisticLine({ text, value }) {
-  return <p>{text} {value}</p>
+  return (
+    <tr>
+      <td>{text}</td>
+      <td>{value}</td>
+    </tr>
+  )
 }
 
 function Statistics({ good, neutral, bad }) {
@@ -12,15 +17,16 @@ function Statistics({ good, neutral, bad }) {
   const positive = (good / all) * 100
 
   return (
-    <div>
-      <h2>statistics</h2>
-      <StatisticLine text="good" value={good} />
-      <StatisticLine text="neutral" value={neutral} />
-      <StatisticLine text="bad" value={bad} />
-      <StatisticLine text="all" value={all} />
-      <StatisticLine text="average" value={average.toFixed(2)} />
-      <StatisticLine text="positive" value={positive.toFixed(1) + ' %'} />
-    </div>
+    <table>
+      <tbody>
+        <StatisticLine text="good" value={good} />
+        <StatisticLine text="neutral" value={neutral} />
+        <StatisticLine text="bad" value={bad} />
+        <StatisticLine text="all" value={all} />
+        <StatisticLine text="average" value={average.toFixed(2)} />
+        <StatisticLine text="positive" value={positive.toFixed(1) + ' %'} />
+      </tbody>
+    </table>
   )
 }
 
@@ -36,6 +42,7 @@ export default function App() {
       <button onClick={() => setNeutral(neutral + 1)}>neutral</button>
       <button onClick={() => setBad(bad + 1)}>bad</button>
 
+      <h2>statistics</h2>
       <Statistics good={good} neutral={neutral} bad={bad} />
     </div>
   )
