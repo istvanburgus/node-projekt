@@ -24,6 +24,9 @@ export default function App() {
     setVotes(newVotes)
   }
 
+  
+  const topIndex = votes.indexOf(Math.max(...votes))
+
   return (
     <div>
       <h1>Anecdote of the day</h1>
@@ -31,6 +34,10 @@ export default function App() {
       <p>has {votes[selected]} votes</p>
       <button onClick={handleVote}>vote</button>
       <button onClick={handleNext}>next anecdote</button>
+
+      <h1>Anecdote with most votes</h1>
+      <p>{anecdotes[topIndex]}</p>
+      <p>has {votes[topIndex]} votes</p>
     </div>
   )
 }
