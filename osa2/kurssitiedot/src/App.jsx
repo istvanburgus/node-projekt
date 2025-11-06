@@ -6,20 +6,28 @@ export default function App() {
     { id: 2, name: 'Ada Lovelace' }
   ])
 
-
+  
   const [newName, setNewName] = useState('')
 
-  
   const handleSubmit = (event) => {
-    event.preventDefault() 
+    event.preventDefault()
 
+    const nameTrimmed = newName.trim()
+    if (!nameTrimmed) return
+
+    
+    const exists = persons.some(
+      p => p.name.toLowerCase() === nameTrimmed.toLowerCase()
+    )
+    if (exists) {
+      alert(`${nameTrimmed} is already added to phonebook`)
+      return
+    }
 
     const newPerson = {
       id: persons.length ? Math.max(...persons.map(p => p.id)) + 1 : 1,
-      name: newName.trim()
+      name: nameTrimmed
     }
-
-    if (!newPerson.name) return
 
     setPersons(persons.concat(newPerson))
     setNewName('')
