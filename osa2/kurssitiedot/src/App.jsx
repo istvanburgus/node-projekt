@@ -6,8 +6,12 @@ export default function App() {
     { id: 2, name: 'Ada Lovelace', number: '39-44-5323523' }
   ])
 
+  
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
+
+  
+  const [filterText, setFilterText] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -16,7 +20,6 @@ export default function App() {
     const numberTrimmed = newNumber.trim()
     if (!nameTrimmed || !numberTrimmed) return
 
-    
     const exists = persons.some(
       p => p.name.toLowerCase() === nameTrimmed.toLowerCase()
     )
@@ -36,10 +39,26 @@ export default function App() {
     setNewNumber('')
   }
 
+  
+  const filteredPersons = persons.filter(p =>
+    p.name.toLowerCase().includes(filterText.toLowerCase())
+  )
+
   return (
     <div>
       <h1>Phonebook</h1>
 
+      {}
+      <div>
+        filter shown with:{' '}
+        <input
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          placeholder="type to filter by name"
+        />
+      </div>
+
+      <h2>Add a new</h2>
       <form onSubmit={handleSubmit}>
         <div>
           name:{' '}
@@ -64,7 +83,7 @@ export default function App() {
 
       <h2>Numbers</h2>
       <ul>
-        {persons.map(p => (
+        {filteredPersons.map(p => (
           <li key={p.id}>
             {p.name} — {p.number}
           </li>
