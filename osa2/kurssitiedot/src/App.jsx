@@ -1,21 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+import Filter from './components/Filter'
+import PersonForm from './components/PersonForm'
+import Persons from './components/Persons'
 
 export default function App() {
-  const [persons, setPersons] = useState([
-    { id: 1, name: 'Arto Hellas', number: '040-1234567' },
-    { id: 2, name: 'Ada Lovelace', number: '39-44-5323523' }
-  ])
-
-  
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
-
-  
   const [filterText, setFilterText] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // 2.11
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    axios.get('/persons.json')
+      .then(res => {
+        if (!cancelled) {
+          setPersons(res.data || [])
+          setError(null)
+        }
+      })
+      .catch(err => {
+        if (!cancelled) setError('Tietojen haku epäonnistui (persons.json)')
+        console.error(err)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   const handleSubmit = (event) => {
     event.preventDefault()
-
     const nameTrimmed = newName.trim()
     const numberTrimmed = newNumber.trim()
     if (!nameTrimmed || !numberTrimmed) return
@@ -34,12 +53,11 @@ export default function App() {
       number: numberTrimmed
     }
 
-    setPersons(persons.concat(newPerson))
+    setPersons(prev => prev.concat(newPerson))
     setNewName('')
     setNewNumber('')
   }
 
-  
   const filteredPersons = persons.filter(p =>
     p.name.toLowerCase().includes(filterText.toLowerCase())
   )
@@ -48,47 +66,20 @@ export default function App() {
     <div>
       <h1>Phonebook</h1>
 
-      {}
-      <div>
-        filter shown with:{' '}
-        <input
-          value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
-          placeholder="type to filter by name"
-        />
-      </div>
+      <Filter filterText={filterText} onChange={setFilterText} />
 
-      <h2>Add a new</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          name:{' '}
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="type a name"
-          />
-        </div>
-        <div>
-          number:{' '}
-          <input
-            value={newNumber}
-            onChange={(e) => setNewNumber(e.target.value)}
-            placeholder="e.g. 040-1234567"
-          />
-        </div>
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
+      <PersonForm
+        newName={newName}
+        onNameChange={setNewName}
+        newNumber={newNumber}
+        onNumberChange={setNewNumber}
+        onSubmit={handleSubmit}
+      />
 
-      <h2>Numbers</h2>
-      <ul>
-        {filteredPersons.map(p => (
-          <li key={p.id}>
-            {p.name} — {p.number}
-          </li>
-        ))}
-      </ul>
+      {loading && <p>Loading…</p>}
+      {error && <p style={{color:'crimson'}}>{error}</p>}
+
+      {!loading && !error && <Persons persons={filteredPersons} />}
     </div>
   )
 }
