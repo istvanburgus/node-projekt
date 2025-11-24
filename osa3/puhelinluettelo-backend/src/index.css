@@ -1,0 +1,20 @@
+.notification {
+  font-size: 20px;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+/* vihreä laatikko onnistumisille */
+.notification.success {
+  color: green;
+  background: #dff6dd;
+  border: 3px solid green;
+}
+
+/* punainen laatikko virheille */
+.notification.error {
+  color: red;
+  background: #fddede;
+  border: 3px solid red;
+}
