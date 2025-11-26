@@ -22,33 +22,72 @@ export default function App() {
     }, 5000)
   }
 
-  // ✅ Tietojen noutaminen backendistä
+  // Tietojen noutaminen backendistä
   useEffect(() => {
     personsService
       .getAll()
       .then(data => {
         setPersons(data)
       })
+      .catch(error => {
+        console.error('Error fetching persons:', error)
+        showNotification('Tietojen haku epäonnistui', 'error')
+      })
   }, [])
 
-  // ✅ Uuden henkilön lisääminen (POST)
+  // Uuden henkilön lisääminen (POST) + numeron päivitys (PUT)
   const handleSubmit = (event) => {
     event.preventDefault()
     const nameTrimmed = newName.trim()
     const numberTrimmed = newNumber.trim()
     if (!nameTrimmed || !numberTrimmed) return
 
-    const exists = persons.some(
+    const existing = persons.find(
       p => p.name.toLowerCase() === nameTrimmed.toLowerCase()
     )
-    if (exists) {
-      alert(`${nameTrimmed} is already added to phonebook`)
+
+    // Jos henkilö on jo olemassa → päivitetään numero (PUT)
+    if (existing) {
+      const ok = confirm(
+        `${existing.name} is already added to phonebook, replace the old number with a new one?`
+      )
+      if (!ok) return
+
+      const changedPerson = { ...existing, number: numberTrimmed }
+
+      personsService
+        .update(existing.id, changedPerson)
+        .then(returnedPerson => {
+          setPersons(prev =>
+            prev.map(p => p.id === existing.id ? returnedPerson : p)
+          )
+          setNewName('')
+          setNewNumber('')
+          showNotification(`Päivitetty ${returnedPerson.name}`, 'success')
+        })
+        .catch(error => {
+          console.error('Update failed:', error)
+          const serverMessage = error.response?.data?.error
+
+          if (serverMessage) {
+            // Mongoose-validoinnin virheilmoitus
+            showNotification(serverMessage, 'error')
+          } else {
+            showNotification(
+              `Henkilö ${existing.name} on jo poistettu palvelimelta`,
+              'error'
+            )
+            setPersons(prev => prev.filter(p => p.id !== existing.id))
+          }
+        })
+
       return
     }
 
+    // Uusi henkilö (POST)
     const newPerson = {
       name: nameTrimmed,
-      number: numberTrimmed
+      number: numberTrimmed,
     }
 
     personsService
@@ -59,13 +98,14 @@ export default function App() {
         setNewNumber('')
         showNotification(`Lisätty ${addedPerson.name}`, 'success')
       })
-      .catch(err => {
-        console.error('Error adding person:', err)
-        showNotification('Adding person failed!', 'error')
+      .catch(error => {
+        console.error('Error adding person:', error)
+        const msg = error.response?.data?.error || 'Adding person failed!'
+        showNotification(msg, 'error')
       })
   }
 
-  // ✅ Henkilön poistaminen (DELETE)
+  // Henkilön poistaminen (DELETE)
   const handleDelete = (id, name) => {
     if (!confirm(`Delete ${name}?`)) return
 
@@ -75,8 +115,8 @@ export default function App() {
         setPersons(prev => prev.filter(p => p.id !== id))
         showNotification(`Poistettu ${name}`, 'success')
       })
-      .catch(err => {
-        console.error('Delete failed:', err)
+      .catch(error => {
+        console.error('Delete failed:', error)
         showNotification(
           `Henkilön ${name} tiedot on jo valmiiksi poistettu palvelimelta`,
           'error'
