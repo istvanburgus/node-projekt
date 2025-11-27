@@ -18,16 +18,42 @@ mongoose
     console.log('Virhe yhdistäessä MongoDB:hen:', error.message)
   })
 
+// Custom-validointi puhelinnumerolle
+const numberValidator = (value) => {
+  if (!value) return false
+
+  // Pituus vähintään 8 merkkiä
+  if (value.length < 8) return false
+
+  // Pitää sisältää tasan yhden väliviivan
+  const parts = value.split('-')
+  if (parts.length !== 2) return false
+
+  const [prefix, suffix] = parts
+
+  // Ensimmäinen osa: tasan 3 numeroa
+  if (!/^\d{3}$/.test(prefix)) return false
+
+  // Toinen osa: vähintään 4 numeroa
+  if (!/^\d{4,}$/.test(suffix)) return false
+
+  return true
+}
+
 // Skeema henkilölle
 const personSchema = new mongoose.Schema({
   name: {
     type: String,
-    minlength: 3,
+    minlength: [3, 'Nimen tulee olla vähintään 3 merkkiä pitkä'],
     required: true,
   },
   number: {
     type: String,
-    required: true,
+    required: [true, 'Phone number required'],
+    validate: {
+      validator: numberValidator,
+      message: props => `${props.value} ei ole kelvollinen puhelinnumero!`
+    }
   },
 })
 
