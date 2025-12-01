@@ -50,7 +50,7 @@ if (process.argv.length === 5) {
     number: number,
   })
 
-  person.save().then(result => {
+  person.save().then(() => {
     console.log(`Lisätty ${name} numero ${number} puhelinluetteloon`)
     mongoose.connection.close()
   })
