@@ -1,4 +1,4 @@
-const { test, beforeEach, after } = require('node:test')
+const { test, beforeEach, after, describe } = require('node:test')
 const assert = require('node:assert')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
@@ -8,7 +8,7 @@ const Blog = require('../models/blog')
 // tehdään supertest-olio sovelluksesta
 const api = supertest(app)
 
-// testejä varten alustettava blogilista
+// alustetaan testejä varten käytettävät blogit
 const initialBlogs = [
   {
     title: 'Ensimmäinen blogi',
@@ -31,15 +31,71 @@ beforeEach(async () => {
   await Blog.insertMany(initialBlogs)
 })
 
-// testi 4.6: /api/blogs palauttaa oikean määrän blogeja
-test('GET /api/blogs palauttaa oikean määrän blogeja', async () => {
-  const response = await api.get('/api/blogs')
+// 4.6 ja 4.9: GET /api/blogs
 
-  // varmistetaan että statuskoodi on 200
-  assert.strictEqual(response.statusCode, 200)
+describe('GET /api/blogs', () => {
+  test('palauttaa oikean määrän blogeja', async () => {
+    const response = await api.get('/api/blogs')
 
-  // varmistetaan että määrä vastaa initialBlogs.length arvoa
-  assert.strictEqual(response.body.length, initialBlogs.length)
+    assert.strictEqual(response.statusCode, 200)
+    assert.strictEqual(response.body.length, initialBlogs.length)
+  })
+
+  test('palauttaa blogit, joilla on kenttä id', async () => {
+    const response = await api.get('/api/blogs')
+
+    const blogs = response.body
+    assert.ok(blogs.length > 0)
+
+    const firstBlog = blogs[0]
+
+    // tarkistetaan että id on määritelty
+    assert.ok(firstBlog.id)
+
+    // halutessasi (ei pakko): varmistetaan, ettei _id ole mukana
+    // assert.strictEqual(firstBlog._id, undefined)
+  })
+})
+
+// 4.10: POST /api/blogs
+
+describe('POST /api/blogs', () => {
+  test('lisää uuden blogin ja blogien määrä kasvaa yhdellä', async () => {
+    const newBlog = {
+      title: 'Uusi blogi',
+      author: 'Testaaja 3',
+      url: 'http://example.com/3',
+      likes: 7,
+    }
+
+    const blogsEnnen = await Blog.find({})
+    const määräEnnen = blogsEnnen.length
+
+    const response = await api.post('/api/blogs').send(newBlog)
+
+    assert.strictEqual(response.statusCode, 201)
+
+    const blogsJälkeen = await Blog.find({})
+    const määräJälkeen = blogsJälkeen.length
+
+    assert.strictEqual(määräJälkeen, määräEnnen + 1)
+  })
+
+  test('lisätty blogi löytyy tietokannasta oikealla sisällöllä', async () => {
+    const newBlog = {
+      title: 'Uusi blogi 2',
+      author: 'Testaaja 4',
+      url: 'http://example.com/4',
+      likes: 12,
+    }
+
+    await api.post('/api/blogs').send(newBlog)
+
+    const blogsJälkeen = await Blog.find({})
+    const titles = blogsJälkeen.map((b) => b.title)
+
+    assert.ok(titles.includes('Uusi blogi 2'))
+  })
 })
 
 // suljetaan mongoose-yhteys testien lopuksi
