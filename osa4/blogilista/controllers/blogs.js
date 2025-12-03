@@ -1,19 +1,23 @@
 const express = require('express')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 const blogienReititin = express.Router()
 
-// hae kaikki blogit
+// hae kaikki blogit, mukana käyttäjätiedot
 blogienReititin.get('/', async (pyynto, vastaus, next) => {
   try {
-    const blogit = await Blog.find({})
+    const blogit = await Blog.find({}).populate('user', {
+      username: 1,
+      name: 1,
+    })
     vastaus.json(blogit)
   } catch (virhe) {
     next(virhe)
   }
 })
 
-// lisää uusi blogi
+// lisää uusi blogi ja liitä se johonkin käyttäjään
 blogienReititin.post('/', async (pyynto, vastaus, next) => {
   try {
     const { title, author, url, likes } = pyynto.body
@@ -22,15 +26,38 @@ blogienReititin.post('/', async (pyynto, vastaus, next) => {
       return vastaus.status(400).json({ virhe: 'title tai url puuttuu' })
     }
 
-    const uusiBlogi = new Blog({
-      title,
-      author,
-      url,
-      likes,
-    })
+    // haetaan jokin käyttäjä tietokannasta
+    const kayttaja = await User.findOne({})
 
-    const tallennettuBlogi = await uusiBlogi.save()
-    vastaus.status(201).json(tallennettuBlogi)
+    let uusiBlogi
+
+    if (kayttaja) {
+      uusiBlogi = new Blog({
+        title,
+        author,
+        url,
+        likes,
+        user: kayttaja._id,
+      })
+
+      const tallennettuBlogi = await uusiBlogi.save()
+
+      kayttaja.blogs = kayttaja.blogs.concat(tallennettuBlogi._id)
+      await kayttaja.save()
+
+      return vastaus.status(201).json(tallennettuBlogi)
+    } else {
+      // jos käyttäjää ei ole, luodaan blogi ilman user-kenttää
+      uusiBlogi = new Blog({
+        title,
+        author,
+        url,
+        likes,
+      })
+
+      const tallennettuBlogi = await uusiBlogi.save()
+      return vastaus.status(201).json(tallennettuBlogi)
+    }
   } catch (virhe) {
     next(virhe)
   }
