@@ -5,10 +5,8 @@ const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
 
-// tehdään supertest-olio sovelluksesta
 const api = supertest(app)
 
-// alustetaan testejä varten käytettävät blogit
 const initialBlogs = [
   {
     title: 'Ensimmäinen blogi',
@@ -24,8 +22,7 @@ const initialBlogs = [
   },
 ]
 
-// ajetaan ennen jokaista testiä:
-// tyhjennetään tietokanta ja lisätään initialBlogs-listan blogit
+// ennen jokaista testiä tyhjennetään tietokanta ja lisätään alkuperäiset blogit
 beforeEach(async () => {
   await Blog.deleteMany({})
   await Blog.insertMany(initialBlogs)
@@ -49,15 +46,12 @@ describe('GET /api/blogs', () => {
 
     const firstBlog = blogs[0]
 
-    // tarkistetaan että id on määritelty
+    // tarkistetaan että id on olemassa
     assert.ok(firstBlog.id)
-
-    // halutessasi (ei pakko): varmistetaan, ettei _id ole mukana
-    // assert.strictEqual(firstBlog._id, undefined)
   })
 })
 
-// 4.10: POST /api/blogs
+// 4.10, 4.11 ja 4.12: POST /api/blogs
 
 describe('POST /api/blogs', () => {
   test('lisää uuden blogin ja blogien määrä kasvaa yhdellä', async () => {
@@ -96,9 +90,68 @@ describe('POST /api/blogs', () => {
 
     assert.ok(titles.includes('Uusi blogi 2'))
   })
+
+  // 4.11: likes on oletuksena 0 jos sitä ei lähetetä
+  test('likes on 0 jos sitä ei lähetetä', async () => {
+    const uusiBlogi = {
+      title: 'Blogi ilman tykkäyksiä',
+      author: 'Testaaja 1',
+      url: 'http://esimerkki.fi/tykkaykseton',
+    }
+
+    const vastaus = await api
+      .post('/api/blogs')
+      .send(uusiBlogi)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    assert.strictEqual(vastaus.body.likes, 0)
+
+    const blogitKannassa = await Blog.find({})
+    const lisatty = blogitKannassa.find((b) => b.title === uusiBlogi.title)
+    assert.strictEqual(lisatty.likes, 0)
+  })
+
+  // 4.12: blogin luonti epäonnistuu jos title puuttuu
+  test('palauttaa 400 jos title puuttuu', async () => {
+    const blogiIlmanTitlea = {
+      author: 'Testaaja 1',
+      url: 'http://esimerkki.fi/ilman-titlea',
+      likes: 3,
+    }
+
+    const blogitEnnen = await Blog.find({})
+
+    await api
+      .post('/api/blogs')
+      .send(blogiIlmanTitlea)
+      .expect(400)
+
+    const blogitJalkeen = await Blog.find({})
+    assert.strictEqual(blogitJalkeen.length, blogitEnnen.length)
+  })
+
+  // 4.12: blogin luonti epäonnistuu jos url puuttuu
+  test('palauttaa 400 jos url puuttuu', async () => {
+    const blogiIlmanUrla = {
+      title: 'Ilman urla oleva blogi',
+      author: 'Testaaja 1',
+      likes: 3,
+    }
+
+    const blogitEnnen = await Blog.find({})
+
+    await api
+      .post('/api/blogs')
+      .send(blogiIlmanUrla)
+      .expect(400)
+
+    const blogitJalkeen = await Blog.find({})
+    assert.strictEqual(blogitJalkeen.length, blogitEnnen.length)
+  })
 })
 
-// suljetaan mongoose-yhteys testien lopuksi
+// suljetaan tietokantayhteys testien lopuksi
 after(async () => {
   await mongoose.connection.close()
 })
