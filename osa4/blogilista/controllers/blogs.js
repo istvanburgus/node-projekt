@@ -3,7 +3,7 @@ const Blog = require('../models/blog')
 
 const blogienReititin = express.Router()
 
-// Hae kaikki blogit
+// hae kaikki blogit
 blogienReititin.get('/', async (pyynto, vastaus, next) => {
   try {
     const blogit = await Blog.find({})
@@ -13,12 +13,11 @@ blogienReititin.get('/', async (pyynto, vastaus, next) => {
   }
 })
 
-// Lisää uusi blogi
+// lisää uusi blogi
 blogienReititin.post('/', async (pyynto, vastaus, next) => {
   try {
     const { title, author, url, likes } = pyynto.body
 
-    // Title TAI url puuttuu -> 400
     if (!title || !url) {
       return vastaus.status(400).json({ virhe: 'title tai url puuttuu' })
     }
@@ -27,11 +26,22 @@ blogienReititin.post('/', async (pyynto, vastaus, next) => {
       title,
       author,
       url,
-      likes, 
+      likes,
     })
 
     const tallennettuBlogi = await uusiBlogi.save()
     vastaus.status(201).json(tallennettuBlogi)
+  } catch (virhe) {
+    next(virhe)
+  }
+})
+
+// poista yksi blogi id:n perusteella
+blogienReititin.delete('/:id', async (pyynto, vastaus, next) => {
+  try {
+    const id = pyynto.params.id
+    await Blog.findByIdAndDelete(id)
+    vastaus.status(204).end()
   } catch (virhe) {
     next(virhe)
   }
