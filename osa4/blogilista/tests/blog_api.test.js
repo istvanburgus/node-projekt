@@ -156,6 +156,29 @@ describe('DELETE /api/blogs', () => {
   })
 })
 
+// 4.14: PUT /api/blogs
+describe('PUT /api/blogs', () => {
+  test('päivittää blogin tykkäysten määrän', async () => {
+    const blogsEnnen = await helper.blogsInDb()
+    const blogiMuokattava = blogsEnnen[0]
+
+    const paivitetytTiedot = {
+      ...blogiMuokattava,
+      likes: blogiMuokattava.likes + 10,
+    }
+
+    await api
+      .put(`/api/blogs/${blogiMuokattava.id}`)
+      .send(paivitetytTiedot)
+      .expect(200)
+
+    const blogsJalkeen = await helper.blogsInDb()
+    const paivitetty = blogsJalkeen.find((b) => b.id === blogiMuokattava.id)
+
+    assert.strictEqual(paivitetty.likes, blogiMuokattava.likes + 10)
+  })
+})
+
 // suljetaan tietokantayhteys testien lopuksi
 after(async () => {
   await mongoose.connection.close()
