@@ -47,4 +47,28 @@ blogienReititin.delete('/:id', async (pyynto, vastaus, next) => {
   }
 })
 
+// muokkaa blogia id:n perusteella
+blogienReititin.put('/:id', async (pyynto, vastaus, next) => {
+  try {
+    const { title, author, url, likes } = pyynto.body
+
+    const paivitettyBlogi = {
+      title,
+      author,
+      url,
+      likes,
+    }
+
+    const tulos = await Blog.findByIdAndUpdate(
+      pyynto.params.id,
+      paivitettyBlogi,
+      { new: true, runValidators: true, context: 'query' }
+    )
+
+    vastaus.json(tulos)
+  } catch (virhe) {
+    next(virhe)
+  }
+})
+
 module.exports = blogienReititin
