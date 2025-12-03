@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   },
 })
 
-// muutetaan _id-kenttä id:ksi ja piilotetaan salasanan hash
+// muunnetaan _id kenttä id:ksi ja piilotetaan salasanan hash
 userSchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
