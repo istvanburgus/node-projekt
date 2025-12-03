@@ -4,28 +4,14 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
+const helper = require('./test_helper')
 
 const api = supertest(app)
 
-const initialBlogs = [
-  {
-    title: 'Ensimmäinen blogi',
-    author: 'Testaaja 1',
-    url: 'http://example.com/1',
-    likes: 5,
-  },
-  {
-    title: 'Toinen blogi',
-    author: 'Testaaja 2',
-    url: 'http://example.com/2',
-    likes: 10,
-  },
-]
-
-// ennen jokaista testiä tyhjennetään tietokanta ja lisätään alkuperäiset blogit
+// ennen jokaista testiä tyhjennetään tietokanta ja lisätään apufunktion blogit
 beforeEach(async () => {
   await Blog.deleteMany({})
-  await Blog.insertMany(initialBlogs)
+  await Blog.insertMany(helper.initialBlogs)
 })
 
 // 4.6 ja 4.9: GET /api/blogs
@@ -35,7 +21,7 @@ describe('GET /api/blogs', () => {
     const response = await api.get('/api/blogs')
 
     assert.strictEqual(response.statusCode, 200)
-    assert.strictEqual(response.body.length, initialBlogs.length)
+    assert.strictEqual(response.body.length, helper.initialBlogs.length)
   })
 
   test('palauttaa blogit, joilla on kenttä id', async () => {
@@ -55,6 +41,9 @@ describe('GET /api/blogs', () => {
 
 describe('POST /api/blogs', () => {
   test('lisää uuden blogin ja blogien määrä kasvaa yhdellä', async () => {
+    const blogsEnnen = await helper.blogsInDb()
+    const määräEnnen = blogsEnnen.length
+
     const newBlog = {
       title: 'Uusi blogi',
       author: 'Testaaja 3',
@@ -62,14 +51,11 @@ describe('POST /api/blogs', () => {
       likes: 7,
     }
 
-    const blogsEnnen = await Blog.find({})
-    const määräEnnen = blogsEnnen.length
-
     const response = await api.post('/api/blogs').send(newBlog)
 
     assert.strictEqual(response.statusCode, 201)
 
-    const blogsJälkeen = await Blog.find({})
+    const blogsJälkeen = await helper.blogsInDb()
     const määräJälkeen = blogsJälkeen.length
 
     assert.strictEqual(määräJälkeen, määräEnnen + 1)
@@ -85,7 +71,7 @@ describe('POST /api/blogs', () => {
 
     await api.post('/api/blogs').send(newBlog)
 
-    const blogsJälkeen = await Blog.find({})
+    const blogsJälkeen = await helper.blogsInDb()
     const titles = blogsJälkeen.map((b) => b.title)
 
     assert.ok(titles.includes('Uusi blogi 2'))
@@ -107,7 +93,7 @@ describe('POST /api/blogs', () => {
 
     assert.strictEqual(vastaus.body.likes, 0)
 
-    const blogitKannassa = await Blog.find({})
+    const blogitKannassa = await helper.blogsInDb()
     const lisatty = blogitKannassa.find((b) => b.title === uusiBlogi.title)
     assert.strictEqual(lisatty.likes, 0)
   })
@@ -120,14 +106,14 @@ describe('POST /api/blogs', () => {
       likes: 3,
     }
 
-    const blogitEnnen = await Blog.find({})
+    const blogitEnnen = await helper.blogsInDb()
 
     await api
       .post('/api/blogs')
       .send(blogiIlmanTitlea)
       .expect(400)
 
-    const blogitJalkeen = await Blog.find({})
+    const blogitJalkeen = await helper.blogsInDb()
     assert.strictEqual(blogitJalkeen.length, blogitEnnen.length)
   })
 
@@ -139,15 +125,34 @@ describe('POST /api/blogs', () => {
       likes: 3,
     }
 
-    const blogitEnnen = await Blog.find({})
+    const blogitEnnen = await helper.blogsInDb()
 
     await api
       .post('/api/blogs')
       .send(blogiIlmanUrla)
       .expect(400)
 
-    const blogitJalkeen = await Blog.find({})
+    const blogitJalkeen = await helper.blogsInDb()
     assert.strictEqual(blogitJalkeen.length, blogitEnnen.length)
+  })
+})
+
+// 4.13: DELETE /api/blogs/:id
+
+describe('DELETE /api/blogs', () => {
+  test('poistaa blogin kun id on voimassa', async () => {
+    const blogsEnnen = await helper.blogsInDb()
+    const blogiPoistettava = blogsEnnen[0]
+
+    await api
+      .delete(`/api/blogs/${blogiPoistettava.id}`)
+      .expect(204)
+
+    const blogsJalkeen = await helper.blogsInDb()
+    assert.strictEqual(blogsJalkeen.length, blogsEnnen.length - 1)
+
+    const titles = blogsJalkeen.map((b) => b.title)
+    assert.ok(!titles.includes(blogiPoistettava.title))
   })
 })
 
