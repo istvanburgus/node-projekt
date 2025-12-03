@@ -1,18 +1,40 @@
-const blogsRouter = require('express').Router()
+const express = require('express')
 const Blog = require('../models/blog')
 
-// haetaan kaikki blogit async/await-syntaksilla
-blogsRouter.get('/', async (request, response) => {
-  const blogs = await Blog.find({})
-  response.json(blogs)
+const blogienReititin = express.Router()
+
+// Hae kaikki blogit
+blogienReititin.get('/', async (pyynto, vastaus, next) => {
+  try {
+    const blogit = await Blog.find({})
+    vastaus.json(blogit)
+  } catch (virhe) {
+    next(virhe)
+  }
 })
 
-// lisätään uusi blogi async/await-syntaksilla
-blogsRouter.post('/', async (request, response) => {
-  const blog = new Blog(request.body)
+// Lisää uusi blogi
+blogienReititin.post('/', async (pyynto, vastaus, next) => {
+  try {
+    const { title, author, url, likes } = pyynto.body
 
-  const savedBlog = await blog.save()
-  response.status(201).json(savedBlog)
+    // Title TAI url puuttuu -> 400
+    if (!title || !url) {
+      return vastaus.status(400).json({ virhe: 'title tai url puuttuu' })
+    }
+
+    const uusiBlogi = new Blog({
+      title,
+      author,
+      url,
+      likes, 
+    })
+
+    const tallennettuBlogi = await uusiBlogi.save()
+    vastaus.status(201).json(tallennettuBlogi)
+  } catch (virhe) {
+    next(virhe)
+  }
 })
 
-module.exports = blogsRouter
+module.exports = blogienReititin
