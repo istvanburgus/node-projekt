@@ -1,20 +1,65 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
 
+  // tarkistetaan onko käyttäjä jo tallennettu localStorageen
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
+    if (loggedUserJSON) {
+      try {
+        const savedUser = JSON.parse(loggedUserJSON)
+        // jos token ei ole null, pidetään käyttäjä kirjautuneena
+        if (savedUser && savedUser.username && savedUser.token) {
+          setUser(savedUser)
+        }
+      } catch (e) {
+        console.log('localStoragen parsinta epäonnistui', e)
+      }
+    }
+  }, [])
+
   const handleLogin = (event) => {
     event.preventDefault()
     console.log('kirjautuminen', username, password)
 
-    setUser({ username })
+    // vain simuloidaan tokenin talletus
+    const loggedUser = {
+      username,
+      token: 'dummy-token',
+    }
+
+    // tallennetaan kirjautumistiedot localStorageen
+    window.localStorage.setItem(
+      'loggedBlogAppUser',
+      JSON.stringify(loggedUser)
+    )
+
+    setUser(loggedUser)
     setUsername('')
     setPassword('')
   }
 
   const handleLogout = () => {
+    // haetaan mahdollinen tallennettu käyttäjä
+    const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
+    if (loggedUserJSON) {
+      try {
+        const savedUser = JSON.parse(loggedUserJSON)
+        // asetetaan tokeniksi null, kuten tehtävässä pyydetään
+        savedUser.token = null
+        window.localStorage.setItem(
+          'loggedBlogAppUser',
+          JSON.stringify(savedUser)
+        )
+      } catch (e) {
+        console.log('localStoragen parsinta epäonnistui uloskirjautuessa', e)
+      }
+    }
+
+    // päivitetään myös komponentin tila
     setUser(null)
   }
 
