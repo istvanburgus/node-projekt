@@ -7,7 +7,7 @@ const blogienReititin = express.Router()
 
 const SECRET = process.env.SECRET || 'salainen'
 
-// hae kaikki blogit, mukana käyttäjätiedot
+// hae kaikki blogit käyttäjätietojen kanssa
 blogienReititin.get('/', async (pyynto, vastaus, next) => {
   try {
     const blogit = await Blog.find({}).populate('user', {
@@ -20,7 +20,7 @@ blogienReititin.get('/', async (pyynto, vastaus, next) => {
   }
 })
 
-// lisää uusi blogi, vain kirjautunut käyttäjä
+// lisää uusi blogi
 blogienReititin.post('/', async (pyynto, vastaus, next) => {
   try {
     const { title, author, url, likes } = pyynto.body
@@ -31,6 +31,7 @@ blogienReititin.post('/', async (pyynto, vastaus, next) => {
 
     let kayttaja = null
 
+    // tuotannossa vaaditaan token
     if (process.env.NODE_ENV !== 'test') {
       const token = pyynto.token
 
@@ -52,7 +53,7 @@ blogienReititin.post('/', async (pyynto, vastaus, next) => {
         return vastaus.status(401).json({ error: 'käyttäjää ei löydy' })
       }
     } else {
-      // testejä varten voidaan käyttää jotain käyttäjää tai jättää nulliksi
+      // testeissä voidaan käyttää mitä tahansa käyttäjää tai jättää nulliksi
       kayttaja = await User.findOne({})
     }
 
@@ -77,12 +78,45 @@ blogienReititin.post('/', async (pyynto, vastaus, next) => {
   }
 })
 
-// poista yksi blogi id:n perusteella
+// poista blogi, vain lisääjä voi poistaa
 blogienReititin.delete('/:id', async (pyynto, vastaus, next) => {
   try {
-    const id = pyynto.params.id
-    await Blog.findByIdAndDelete(id)
-    vastaus.status(204).end()
+    const blogId = pyynto.params.id
+
+    if (process.env.NODE_ENV !== 'test') {
+      const token = pyynto.token
+
+      if (!token) {
+        return vastaus.status(401).json({ error: 'token puuttuu' })
+      }
+
+      const decodedToken = jwt.verify(token, SECRET)
+
+      if (!decodedToken.id) {
+        return vastaus
+          .status(401)
+          .json({ error: 'token on virheellinen tai käyttäjä puuttuu' })
+      }
+
+      const blog = await Blog.findById(blogId)
+
+      if (!blog) {
+        return vastaus.status(404).json({ error: 'blogia ei löytynyt' })
+      }
+
+      if (!blog.user || blog.user.toString() !== decodedToken.id.toString()) {
+        return vastaus
+          .status(401)
+          .json({ error: 'vain blogin lisääjä voi poistaa blogin' })
+      }
+
+      await Blog.findByIdAndDelete(blogId)
+      return vastaus.status(204).end()
+    } else {
+      // testeissä poisto toimii kuten ennen
+      await Blog.findByIdAndDelete(blogId)
+      return vastaus.status(204).end()
+    }
   } catch (virhe) {
     next(virhe)
   }
