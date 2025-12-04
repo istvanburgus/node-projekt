@@ -2,6 +2,23 @@ import { useState, useEffect } from 'react'
 import blogService from './services/blog'
 import loginService from './services/login'
 
+const Notification = ({ notification }) => {
+  if (!notification || !notification.message) {
+    return null
+  }
+
+  const style = {
+    padding: '10px',
+    marginBottom: '10px',
+    borderRadius: '4px',
+    border: '1px solid',
+    backgroundColor: notification.type === 'error' ? '#fdd' : '#dfd',
+    color: notification.type === 'error' ? '#900' : '#060',
+  }
+
+  return <div style={style}>{notification.message}</div>
+}
+
 const App = () => {
   const [blogs, setBlogs] = useState([])
   const [username, setUsername] = useState('')
@@ -12,6 +29,15 @@ const App = () => {
   const [newAuthor, setNewAuthor] = useState('')
   const [newUrl, setNewUrl] = useState('')
 
+  const [notification, setNotification] = useState(null)
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type })
+    setTimeout(() => {
+      setNotification(null)
+    }, 4000)
+  }
+
   // haetaan blogit heti kun sovellus käynnistyy
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -20,10 +46,12 @@ const App = () => {
         setBlogs(initialBlogs)
       } catch (error) {
         console.log('blogien haku epäonnistui', error)
+        showNotification('blogien haku epäonnistui', 'error')
       }
     }
 
     fetchBlogs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // tarkistetaan localStoragesta onko käyttäjä valmiiksi kirjautunut
@@ -52,20 +80,21 @@ const App = () => {
         password,
       })
 
-      // tallennetaan localStorageen
       window.localStorage.setItem(
         'loggedBlogAppUser',
         JSON.stringify(loggedUser)
       )
 
-      // viedään token blogServiceen
       blogService.setToken(loggedUser.token)
 
       setUser(loggedUser)
       setUsername('')
       setPassword('')
+
+      showNotification(`käyttäjä ${loggedUser.username} kirjautui sisään`, 'success')
     } catch (error) {
       console.log('kirjautuminen epäonnistui', error)
+      showNotification('kirjautuminen epäonnistui, tarkista tunnus tai salasana', 'error')
     }
   }
 
@@ -86,6 +115,7 @@ const App = () => {
 
     blogService.setToken(null)
     setUser(null)
+    showNotification('käyttäjä kirjautui ulos', 'success')
   }
 
   const handleCreateBlog = async (event) => {
@@ -103,14 +133,18 @@ const App = () => {
       setNewTitle('')
       setNewAuthor('')
       setNewUrl('')
+      showNotification(`uusi blogi "${savedBlog.title}" lisätty`, 'success')
     } catch (error) {
       console.log('blogin lisäys epäonnistui', error)
+      showNotification('blogin lisäys epäonnistui', 'error')
     }
   }
 
   if (user === null) {
     return (
       <div>
+        <Notification notification={notification} />
+
         <h2>Kirjaudu sovellukseen</h2>
 
         <form onSubmit={handleLogin}>
@@ -142,6 +176,8 @@ const App = () => {
 
   return (
     <div>
+      <Notification notification={notification} />
+
       <p>{user.username} kirjautunut sisään</p>
       <button onClick={handleLogout}>kirjaudu ulos</button>
 
