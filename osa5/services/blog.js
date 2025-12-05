@@ -6,7 +6,6 @@ const setToken = (newToken) => {
   token = `Bearer ${newToken}`
 }
 
-// hae kaikki blogit
 const getAll = async () => {
   const response = await fetch(baseUrl)
   if (!response.ok) {
@@ -16,7 +15,6 @@ const getAll = async () => {
   return data
 }
 
-// lisää uusi blogi, vain jos token on asetettu
 const create = async (newBlog) => {
   const config = {
     method: 'POST',
@@ -39,4 +37,26 @@ const create = async (newBlog) => {
   return data
 }
 
-export default { getAll, create, setToken }
+const update = async (id, updatedBlog) => {
+  const config = {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updatedBlog),
+  }
+
+  if (token) {
+    config.headers['Authorization'] = token
+  }
+
+  const response = await fetch(`${baseUrl}/${id}`, config)
+  if (!response.ok) {
+    throw new Error('blogin päivitys epäonnistui')
+  }
+
+  const data = await response.json()
+  return data
+}
+
+export default { getAll, create, update, setToken }
