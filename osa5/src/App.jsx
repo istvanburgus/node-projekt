@@ -28,10 +28,6 @@ const App = () => {
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
 
-  const [newTitle, setNewTitle] = useState('')
-  const [newAuthor, setNewAuthor] = useState('')
-  const [newUrl, setNewUrl] = useState('')
-
   const [notification, setNotification] = useState(null)
 
   const showNotification = (message, type = 'success') => {
@@ -92,10 +88,16 @@ const App = () => {
       setUsername('')
       setPassword('')
 
-      showNotification(`käyttäjä ${loggedUser.username} kirjautui sisään`, 'success')
+      showNotification(
+        `käyttäjä ${loggedUser.username} kirjautui sisään`,
+        'success'
+      )
     } catch (error) {
       console.log('kirjautuminen epäonnistui', error)
-      showNotification('kirjautuminen epäonnistui, tarkista tunnus tai salasana', 'error')
+      showNotification(
+        'kirjautuminen epäonnistui, tarkista tunnus tai salasana',
+        'error'
+      )
     }
   }
 
@@ -119,21 +121,10 @@ const App = () => {
     showNotification('käyttäjä kirjautui ulos', 'success')
   }
 
-  const handleCreateBlog = async (event) => {
-    event.preventDefault()
-
-    const newBlog = {
-      title: newTitle,
-      author: newAuthor,
-      url: newUrl,
-    }
-
+  const handleCreateBlog = async (newBlog) => {
     try {
       const savedBlog = await blogService.create(newBlog)
       setBlogs(blogs.concat(savedBlog))
-      setNewTitle('')
-      setNewAuthor('')
-      setNewUrl('')
       showNotification(`uusi blogi "${savedBlog.title}" lisätty`, 'success')
     } catch (error) {
       console.log('blogin lisäys epäonnistui', error)
@@ -171,15 +162,7 @@ const App = () => {
       <h2>Lisää uusi blogi</h2>
 
       <Togglable buttonLabel="uusi blogi">
-        <BlogForm
-          title={newTitle}
-          author={newAuthor}
-          url={newUrl}
-          handleTitleChange={({ target }) => setNewTitle(target.value)}
-          handleAuthorChange={({ target }) => setNewAuthor(target.value)}
-          handleUrlChange={({ target }) => setNewUrl(target.value)}
-          handleSubmit={handleCreateBlog}
-        />
+        <BlogForm createBlog={handleCreateBlog} />
       </Togglable>
 
       <h2>Blogit</h2>
