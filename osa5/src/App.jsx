@@ -4,6 +4,7 @@ import loginService from './services/login'
 import Togglable from './components/Togglable'
 import LoginForm from './components/LoginForm'
 import BlogForm from './components/BlogForm'
+import Blog from './components/Blog'
 
 const Notification = ({ notification }) => {
   if (!notification || !notification.message) {
@@ -132,6 +133,31 @@ const App = () => {
     }
   }
 
+  const handleLike = async (blog) => {
+    try {
+      const updatedBlogData = {
+        title: blog.title,
+        author: blog.author,
+        url: blog.url,
+        likes: (blog.likes || 0) + 1,
+        user: blog.user && blog.user.id ? blog.user.id : blog.user,
+      }
+
+      const updatedBlog = await blogService.update(blog.id, updatedBlogData)
+
+      setBlogs(
+        blogs.map((b) =>
+          b.id === blog.id ? { ...b, likes: updatedBlog.likes } : b
+        )
+      )
+
+      showNotification(`tykkäsit blogista "${blog.title}"`, 'success')
+    } catch (error) {
+      console.log('tykkäyksen lisäys epäonnistui', error)
+      showNotification('tykkäyksen lisäys epäonnistui', 'error')
+    }
+  }
+
   if (user === null) {
     return (
       <div>
@@ -166,13 +192,9 @@ const App = () => {
       </Togglable>
 
       <h2>Blogit</h2>
-      <ul>
-        {blogs.map((blog) => (
-          <li key={blog.id}>
-            {blog.title} – {blog.author}
-          </li>
-        ))}
-      </ul>
+      {blogs.map((blog) => (
+        <Blog key={blog.id} blog={blog} onLike={handleLike} />
+      ))}
     </div>
   )
 }
