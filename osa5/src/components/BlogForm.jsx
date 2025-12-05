@@ -1,12 +1,26 @@
-const BlogForm = ({
-  title,
-  author,
-  url,
-  handleTitleChange,
-  handleAuthorChange,
-  handleUrlChange,
-  handleSubmit,
-}) => {
+import { useState } from 'react'
+
+const BlogForm = ({ createBlog }) => {
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+  const [url, setUrl] = useState('')
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    const newBlog = {
+      title,
+      author,
+      url,
+    }
+
+    createBlog(newBlog)
+
+    setTitle('')
+    setAuthor('')
+    setUrl('')
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <div>
@@ -14,7 +28,7 @@ const BlogForm = ({
         <input
           type="text"
           value={title}
-          onChange={handleTitleChange}
+          onChange={({ target }) => setTitle(target.value)}
         />
       </div>
       <div>
@@ -22,7 +36,7 @@ const BlogForm = ({
         <input
           type="text"
           value={author}
-          onChange={handleAuthorChange}
+          onChange={({ target }) => setAuthor(target.value)}
         />
       </div>
       <div>
@@ -30,7 +44,7 @@ const BlogForm = ({
         <input
           type="text"
           value={url}
-          onChange={handleUrlChange}
+          onChange={({ target }) => setUrl(target.value)}
         />
       </div>
       <button type="submit">tallenna blogi</button>
