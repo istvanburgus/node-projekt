@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import blogService from './services/blog'
 import loginService from './services/login'
+import Togglable from './components/Togglable'
+import LoginForm from './components/LoginForm'
+import BlogForm from './components/BlogForm'
 
 const Notification = ({ notification }) => {
   if (!notification || !notification.message) {
@@ -38,7 +41,6 @@ const App = () => {
     }, 4000)
   }
 
-  // haetaan blogit heti kun sovellus käynnistyy
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
@@ -54,7 +56,6 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // tarkistetaan localStoragesta onko käyttäjä valmiiksi kirjautunut
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
     if (loggedUserJSON) {
@@ -147,29 +148,15 @@ const App = () => {
 
         <h2>Kirjaudu sovellukseen</h2>
 
-        <form onSubmit={handleLogin}>
-          <div>
-            käyttäjätunnus
-            <input
-              type="text"
-              value={username}
-              name="Username"
-              onChange={({ target }) => setUsername(target.value)}
-            />
-          </div>
-
-          <div>
-            salasana
-            <input
-              type="password"
-              value={password}
-              name="Password"
-              onChange={({ target }) => setPassword(target.value)}
-            />
-          </div>
-
-          <button type="submit">kirjaudu</button>
-        </form>
+        <Togglable buttonLabel="kirjaudu">
+          <LoginForm
+            username={username}
+            password={password}
+            handleUsernameChange={({ target }) => setUsername(target.value)}
+            handlePasswordChange={({ target }) => setPassword(target.value)}
+            handleSubmit={handleLogin}
+          />
+        </Togglable>
       </div>
     )
   }
@@ -183,33 +170,17 @@ const App = () => {
 
       <h2>Lisää uusi blogi</h2>
 
-      <form onSubmit={handleCreateBlog}>
-        <div>
-          otsikko
-          <input
-            type="text"
-            value={newTitle}
-            onChange={({ target }) => setNewTitle(target.value)}
-          />
-        </div>
-        <div>
-          kirjoittaja
-          <input
-            type="text"
-            value={newAuthor}
-            onChange={({ target }) => setNewAuthor(target.value)}
-          />
-        </div>
-        <div>
-          url
-          <input
-            type="text"
-            value={newUrl}
-            onChange={({ target }) => setNewUrl(target.value)}
-          />
-        </div>
-        <button type="submit">tallenna blogi</button>
-      </form>
+      <Togglable buttonLabel="uusi blogi">
+        <BlogForm
+          title={newTitle}
+          author={newAuthor}
+          url={newUrl}
+          handleTitleChange={({ target }) => setNewTitle(target.value)}
+          handleAuthorChange={({ target }) => setNewAuthor(target.value)}
+          handleUrlChange={({ target }) => setNewUrl(target.value)}
+          handleSubmit={handleCreateBlog}
+        />
+      </Togglable>
 
       <h2>Blogit</h2>
       <ul>
