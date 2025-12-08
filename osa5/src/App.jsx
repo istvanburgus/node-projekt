@@ -158,6 +158,25 @@ const App = () => {
     }
   }
 
+  const handleDelete = async (blog) => {
+    const ok = window.confirm(
+      `Haluatko varmasti poistaa blogin "${blog.title}"?`
+    )
+
+    if (!ok) {
+      return
+    }
+
+    try {
+      await blogService.remove(blog.id)
+      setBlogs(blogs.filter((b) => b.id !== blog.id))
+      showNotification(`blogi "${blog.title}" poistettu`, 'success')
+    } catch (error) {
+      console.log('blogin poisto epäonnistui', error)
+      showNotification('blogin poisto epäonnistui', 'error')
+    }
+  }
+
   if (user === null) {
     return (
       <div>
@@ -178,6 +197,10 @@ const App = () => {
     )
   }
 
+  const sortedBlogs = [...blogs].sort(
+    (a, b) => (b.likes || 0) - (a.likes || 0)
+  )
+
   return (
     <div>
       <Notification notification={notification} />
@@ -192,8 +215,14 @@ const App = () => {
       </Togglable>
 
       <h2>Blogit</h2>
-      {blogs.map((blog) => (
-        <Blog key={blog.id} blog={blog} onLike={handleLike} />
+      {sortedBlogs.map((blog) => (
+        <Blog
+          key={blog.id}
+          blog={blog}
+          onLike={handleLike}
+          onDelete={handleDelete}
+          currentUser={user}
+        />
       ))}
     </div>
   )
