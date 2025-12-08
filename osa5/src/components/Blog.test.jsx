@@ -1,41 +1,85 @@
 import { render, screen } from '@testing-library/react'
-import '@testing-library/jest-dom'
+import userEvent from '@testing-library/user-event'
 import Blog from './Blog'
 
-test('näyttää oletuksena vain otsikon ja kirjoittajan', () => {
-  const blogi = {
-    title: 'Testiblogi',
-    author: 'Testaaja',
-    url: 'http://esimerkki.fi',
-    likes: 10,
-    user: {
+describe('Blog-komponentti', () => {
+  test('näyttää oletuksena vain otsikon ja kirjoittajan', () => {
+    const blog = {
+      title: 'Testiblogi',
+      author: 'Testaaja',
+      url: 'http://example.com/testi',
+      likes: 5,
+      user: {
+        username: 'kevin',
+        name: 'Kevin Testaaja',
+      },
+    }
+
+    const currentUser = {
       username: 'kevin',
       name: 'Kevin Testaaja',
-      id: '12345',
-    },
-    id: 'abc123',
-  }
+    }
 
-  const kayttaja = {
-    username: 'kevin',
-    name: 'Kevin Testaaja',
-  }
+    render(
+      <Blog
+        blog={blog}
+        onLike={() => {}}
+        onDelete={() => {}}
+        currentUser={currentUser}
+      />
+    )
 
-  render(
-    <Blog
-      blog={blogi}
-      onLike={() => {}}
-      onDelete={() => {}}
-      currentUser={kayttaja}
-    />
-  )
+    // otsikko + kirjoittaja näkyvät
+    expect(
+      screen.getByText('Testiblogi Testaaja', { exact: false })
+    ).toBeInTheDocument()
 
-  const otsikkoJaKirjoittaja = screen.getByText('Testiblogi Testaaja')
-  expect(otsikkoJaKirjoittaja).toBeInTheDocument()
+    // nämä EIVÄT näy ennen napin painamista
+    expect(screen.queryByText('http://example.com/testi')).not.toBeInTheDocument()
+    expect(screen.queryByText(/tykkäyksiä 5/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Kevin Testaaja/i)).not.toBeInTheDocument()
+  })
 
-  const urlElementti = screen.queryByText('http://esimerkki.fi')
-  expect(urlElementti).toBeNull()
+  test('näyttää urlin, tykkäykset ja käyttäjänimen kun view-nappia painetaan', async () => {
+    const blog = {
+      title: 'Testiblogi',
+      author: 'Testaaja',
+      url: 'http://example.com/testi',
+      likes: 5,
+      user: {
+        username: 'kevin',
+        name: 'Kevin Testaaja',
+      },
+    }
 
-  const tykkayksetElementti = screen.queryByText(/tykkäyksiä/i)
-  expect(tykkayksetElementti).toBeNull()
+    const currentUser = {
+      username: 'kevin',
+      name: 'Kevin Testaaja',
+    }
+
+    render(
+      <Blog
+        blog={blog}
+        onLike={() => {}}
+        onDelete={() => {}}
+        currentUser={currentUser}
+      />
+    )
+
+    const user = userEvent.setup()
+
+    // ennen painallusta ei näy
+    expect(screen.queryByText('http://example.com/testi')).not.toBeInTheDocument()
+    expect(screen.queryByText(/tykkäyksiä 5/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Kevin Testaaja/i)).not.toBeInTheDocument()
+
+    // painetaan "näytä" nappia
+    const button = screen.getByText('näytä')
+    await user.click(button)
+
+    // nyt kaiken pitää näkyä
+    expect(screen.getByText('http://example.com/testi')).toBeInTheDocument()
+    expect(screen.getByText(/tykkäyksiä 5/i)).toBeInTheDocument()
+    expect(screen.getByText(/Kevin Testaaja/i)).toBeInTheDocument()
+  })
 })
