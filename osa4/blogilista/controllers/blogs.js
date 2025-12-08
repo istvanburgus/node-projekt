@@ -72,6 +72,7 @@ blogienReititin.post('/', async (pyynto, vastaus, next) => {
       await kayttaja.save()
     }
 
+    // palautetaan blogi ilman populatea, tämä on ok
     vastaus.status(201).json(tallennettuBlogi)
   } catch (virhe) {
     next(virhe)
@@ -122,23 +123,35 @@ blogienReititin.delete('/:id', async (pyynto, vastaus, next) => {
   }
 })
 
-// muokkaa blogia id:n perusteella
+// muokkaa blogia id:n perusteella ja palauttaa käyttäjätiedot
 blogienReititin.put('/:id', async (pyynto, vastaus, next) => {
   try {
-    const { title, author, url, likes } = pyynto.body
+    const { title, author, url, likes, user } = pyynto.body
 
     const paivitettyBlogi = {
       title,
       author,
       url,
       likes,
+      // user-kenttä säilyy viittauksena käyttäjään (id)
+      user,
     }
 
-    const tulos = await Blog.findByIdAndUpdate(
-      pyynto.params.id,
-      paivitettyBlogi,
-      { new: true, runValidators: true, context: 'query' }
-    )
+    const tulos = await Blog
+      .findByIdAndUpdate(
+        pyynto.params.id,
+        paivitettyBlogi,
+        {
+          new: true,
+          runValidators: true,
+          context: 'query',
+        }
+      )
+      .populate('user', { username: 1, name: 1 })
+
+    if (!tulos) {
+      return vastaus.status(404).json({ error: 'blogia ei löytynyt' })
+    }
 
     vastaus.json(tulos)
   } catch (virhe) {
