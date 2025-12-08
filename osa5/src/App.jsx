@@ -27,7 +27,25 @@ const App = () => {
   const [blogs, setBlogs] = useState([])
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [user, setUser] = useState(null)
+
+  // luetaan user localStoragesta suoraan alkutilaan
+  const [user, setUser] = useState(() => {
+    const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
+    if (!loggedUserJSON) {
+      return null
+    }
+
+    try {
+      const savedUser = JSON.parse(loggedUserJSON)
+      if (savedUser && savedUser.username && savedUser.token) {
+        return savedUser
+      }
+      return null
+    } catch (e) {
+      console.log('localStoragen parsinta epäonnistui', e)
+      return null
+    }
+  })
 
   const [notification, setNotification] = useState(null)
 
@@ -50,23 +68,16 @@ const App = () => {
     }
 
     fetchBlogs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // kun user muuttuu, asetetaan token blogServicelle
   useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
-    if (loggedUserJSON) {
-      try {
-        const savedUser = JSON.parse(loggedUserJSON)
-        if (savedUser && savedUser.username && savedUser.token) {
-          setUser(savedUser)
-          blogService.setToken(savedUser.token)
-        }
-      } catch (e) {
-        console.log('localStoragen parsinta epäonnistui', e)
-      }
+    if (user && user.token) {
+      blogService.setToken(user.token)
+    } else {
+      blogService.setToken(null)
     }
-  }, [])
+  }, [user])
 
   const handleLogin = async (event) => {
     event.preventDefault()
@@ -82,8 +93,6 @@ const App = () => {
         'loggedBlogAppUser',
         JSON.stringify(loggedUser)
       )
-
-      blogService.setToken(loggedUser.token)
 
       setUser(loggedUser)
       setUsername('')
@@ -103,20 +112,7 @@ const App = () => {
   }
 
   const handleLogout = () => {
-    const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
-    if (loggedUserJSON) {
-      try {
-        const savedUser = JSON.parse(loggedUserJSON)
-        savedUser.token = null
-        window.localStorage.setItem(
-          'loggedBlogAppUser',
-          JSON.stringify(savedUser)
-        )
-      } catch (e) {
-        console.log('localStoragen parsinta epäonnistui uloskirjautuessa', e)
-      }
-    }
-
+    window.localStorage.removeItem('loggedBlogAppUser')
     blogService.setToken(null)
     setUser(null)
     showNotification('käyttäjä kirjautui ulos', 'success')
