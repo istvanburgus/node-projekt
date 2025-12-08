@@ -59,4 +59,20 @@ const update = async (id, updatedBlog) => {
   return data
 }
 
-export default { getAll, create, update, setToken }
+const remove = async (id) => {
+  const config = {
+    method: 'DELETE',
+    headers: {},
+  }
+
+  if (token) {
+    config.headers['Authorization'] = token
+  }
+
+  const response = await fetch(`${baseUrl}/${id}`, config)
+  if (!response.ok) {
+    throw new Error('blogin poisto epäonnistui')
+  }
+}
+
+export default { getAll, create, update, remove, setToken }
